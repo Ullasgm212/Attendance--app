@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Attendance App</title>
+
+<link rel="manifest" href="manifest.json">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
+
+<style>
+body{
+  font-family: Arial;
+  background:#f0f3f8;
+  padding:15px;
+}
+h1{text-align:center;}
+select{
+  padding:8px;
+  width:100%;
+  margin:10px 0;
+}
+.card{
+  background:white;
+  padding:15px;
+  margin:10px 0;
+  border-radius:12px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.1);
+}
+button{
+  padding:8px 14px;
+  margin:5px;
+  border:none;
+  border-radius:6px;
+  color:white;
+}
+.present{background:green;}
+.absent{background:red;}
+.safe{color:green;font-weight:bold;}
+.warn{color:red;font-weight:bold;}
+</style>
+</head>
+
+<body>
+
+<h1>🎓 Attendance Tracker</h1>
+
+<h3 id="today"></h3>
+
+<select id="day" onchange="showToday()">
+<option>Monday</option>
+<option>Tuesday</option>
+<option>Wednesday</option>
+<option>Thursday</option>
+<option>Friday</option>
+<option>Saturday</option>
+</select>
+
+<h3 id="overall"></h3>
+
+<div id="subjects"></div>
+
+<canvas id="chart"></canvas>
+
+<script>
+
+let days=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+let todayDay=days[new Date().getDay()];
+if(todayDay=="Sunday") todayDay="Monday";
+document.getElementById("today").innerText="Today: "+todayDay;
+document.getElementById("day").value=todayDay;
+
+let timetable={
+"Monday":["Chemistry","AI Foundation","Chemistry LAB"],
+"Tuesday":["Digital Electronics","Chemistry LAB","OOPS with C++"],
+"Wednesday":["Linear Algebra","AI Foundation","OOPS with C++","NCC/NSS/YOGA"],
+"Thursday":["Kannada","Linear Algebra","Digital Electronics"],
+"Friday":["Chemistry","Sustainable Engineering","Kannada"],
+"Saturday":[]
+};
+
+let data=JSON.parse(localStorage.getItem("att")) || {
+"Chemistry":{p:0,t:0},
+"AI Foundation":{p:0,t:0},
+"Chemistry LAB":{p:0,t:0},
+"Digital Electronics":{p:0,t:0},
+"OOPS with C++":{p:0,t:0},
+"Linear Algebra":{p:0,t:0},
+"NCC/NSS/YOGA":{p:0,t:0},
+"Kannada":{p:0,t:0},
+"Sustainable Engineering":{p:0,t:0}
+};
+
+function save(){
+localStorage.setItem("att",JSON.stringify(data));
+}
+
+function mark(sub,present){
+data[sub].t++;
+if(present) data[sub].p++;
+save();
+showToday();
+drawChart();
+}
+
+function canMiss(p,t){
+let req=0.75;
+let miss=Math.floor((p/req)-t);
+return miss<0?0:miss;
+}
+
+function overall(){
+let tp=0,tt=0;
+for(let s in data){
+tp+=data[s].p;
+tt+=data[s].t;
+}
+let per=tt==0?0:((tp/tt)*100).toFixed(1);
+document.getElementById("overall").innerHTML=
+"Overall Attendance: <b>"+per+"%</b>";
+}
+
+function showToday(){
+let day=document.getElementById("day").value;
+let list=timetable[day];
+let html="";
